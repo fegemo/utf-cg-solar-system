@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Solar</title>
+  <link rel="stylesheet" href="example.css">
+  <link rel="stylesheet" href="errors.css">
+  <script src="vanilla-utils/errors.js"></script>
+</head>
+<body>
+  <main>
+    <h1>Sistema Solar</h1>
+    <p>
+      Descreve um sistema solar com um sol, 4 planetas e uma lua,
+      ilustrando como funciona a modelagem hierárquica:
+    </p>
+    <canvas class="example-canvas shadow" width="500" height="500"></canvas>
+    <details>
+      <summary>Instruções</summary>
+      <div class="instructions">
+        <p>
+          Existem 3 configurações pré-definidas para a câmera, 
+          cada uma visualizando a cena de um ponto de vista diferente. 
+        </p>
+        <div class="input-controls">
+          <label for="input-camera"><ins>C</ins>âmera:</label>
+          <span>
+            <select id="input-camera" data-bind-select="state.cameras.current" data-bind-options="state.cameras.views" data-bind-option-value="$" data-bind-option-content="name">
+            </select>
+          </span>
+        </div>
+        <dl class="controls-instructions">
+          <dt><kbd data-bind-class="pressed:state.wireframe">W</kbd></dt>
+          <dd>Mostra/oculta o modelo de arame</dd>
+          <dt><kbd data-bind-class="pressed:state.showDepthBuffer">D</kbd></dt>
+          <dd>Mostra/oculta o buffer de profundidade</dd>
+        </dl>
+      </div>
+    </details>
+  </main>
+  <script id="entry" type="module">
+    import { setupWebGL, initialize, render, update } from './main.vanilla.js';
+
+    const gl = setupWebGL('.example-canvas', {alpha: false})
+    await initialize(gl)
+
+    let lastTime = 0;
+    function mainLoop(currentTime) {
+      // (0) descobre o tempo decorrido desde o último frame (deltaTime)
+      const deltaTime = (currentTime - lastTime) / 1000;
+      lastTime = currentTime;
+    
+      // (1) atualiza o estado da aplicação (jogo, animação etc.)
+      update(deltaTime);
+
+      // (2) renderiza a cena sob o estado atual
+      render(gl);
+
+      // registra o próximo frame para ser executado o mais rápido possível
+      requestAnimationFrame(mainLoop);
+    }
+    requestAnimationFrame(mainLoop);
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- ℹ️ necessário apenas para o exemplo, e não para uma aplicação real: -->
+<!-- conecta a interface de controle (html) com o state da aplicação (js) -->
+<script type="module">
+    import { registerBindingContext } from './vanilla-utils/data-binding.js'
+    import { state as appState } from './main.vanilla.js'
+    registerBindingContext('state', appState)
+    window.state = appState
+</script>
