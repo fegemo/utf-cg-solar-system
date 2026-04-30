@@ -366,7 +366,14 @@ export function render(gl) {
             // agora vamos começar as transformações para desenhar mercúrio
             //
             // EXERCÍCIO 1: mercúrio
-
+            model.push(m4.rotateY(model.at(-1), mercury.translationAngle))
+                model[model.length - 1] = m4.translate(model.at(-1), [mercury.distanceToSun, 0, 0])
+                model[model.length - 1] = m4.rotateY(model.at(-1), mercury.rotationAngle)
+                model[model.length - 1] = m4.scale(model.at(-1), [mercury.radius, mercury.radius, mercury.radius])
+                gl.uniformMatrix4fv(state.program.locations.u_model, false, model.at(-1))
+                gl.uniform3fv(state.program.locations.u_color, mercury.color)
+                state.geometry.sphere.draw(gl, state.wireframe)
+            model.pop()
             
             // EXERCÍCIO 2: vênus
 
