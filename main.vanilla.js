@@ -346,37 +346,43 @@ export function render(gl) {
     // sol: move sistema para sua posição, gira no eixo, desenha, desfaz o giro
     let model = []
     model.push(m4.identity())
-    model.push(m4.translate(model.at(-1), [0, 0, 0]))
-    model.push(m4.rotateY(model.at(-1), sun.rotationAngle))
-    model[model.length - 1] = m4.scale(model.at(-1), [sun.radius, sun.radius, sun.radius])
-    gl.uniformMatrix4fv(state.program.locations.u_model, false, model.at(-1))
-    gl.uniform3fv(state.program.locations.u_color, sun.color)
-    gl.uniform1i(state.program.locations.u_illuminated, 0)
-    state.geometry.sphere.draw(gl, state.wireframe)
-    gl.uniform1i(state.program.locations.u_illuminated, 1)
-    // agora que já desenhamos o sol, vamos desfazer a última transformação, 
-    // que era a rotação do sol torno de si...
-    model.pop()
-    //
-    // daí, o topo da pilha (model.at(-1)) volta ao sistema de coordenadas 
-    // que está na posição (transladado) do sol... 
-    //
-    // agora vamos começar as transformações para desenhar mercúrio
-    //
-    // EXERCÍCIO 1: mercúrio
+        model.push(m4.translate(model.at(-1), [0, 0, 0]))
+            model.push(m4.rotateY(model.at(-1), sun.rotationAngle))
+                model[model.length - 1] = m4.scale(model.at(-1), [sun.radius, sun.radius, sun.radius])
+                gl.uniformMatrix4fv(state.program.locations.u_model, false, model.at(-1))
+                gl.uniform3fv(state.program.locations.u_color, sun.color)
+                gl.uniform1i(state.program.locations.u_illuminated, 0)
+                state.geometry.sphere.draw(gl, state.wireframe)
+                gl.uniform1i(state.program.locations.u_illuminated, 1)
+                // agora que já desenhamos o sol, vamos desfazer a última 
+                // transformação, que era a rotação do sol torno de si...
+                // afinal, os planetas não dependem dessa rotação para 
+                // suas posições
+            model.pop()
+            //
+            // agora, o topo da pilha (model.at(-1)) volta ao sistema de coordenadas 
+            // que está na posição do sol... 
+            //
+            // agora vamos começar as transformações para desenhar mercúrio
+            //
+            // EXERCÍCIO 1: mercúrio
 
+            
+            // EXERCÍCIO 2: vênus
+
+            
+            // EXERCÍCIO 3: terra
+
+
+            // EXERCÍCIO 4: marte
+
+
+            // DESAFIO 1: fazer a lua na órbita da Terra
+
+            // DESAFIO 2: câmera seguindo algum corpo celeste (ex.: terra), visualizando
+            // o lado oculto do planeta (ou seja, olhando para o planeta "de costas", 
+            // com o sol atrás do planeta)
     
-    // EXERCÍCIO 2: vênus
-
-    
-    // EXERCÍCIO 3: terra
-
-
-    // EXERCÍCIO 4: lua
-
-
-    // EXERCÍCIO 5: marte
-
 
     // fim do exercício
 }
