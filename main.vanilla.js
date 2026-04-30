@@ -74,12 +74,27 @@ const state = {
             },
             // se quiser, adicione outra câmera aqui que ela vai magicamente
             // funcionar:
-            // {
-            //     name: '',
-            //     position: [],
-            //     target: [],
-            //     up: []
-            // }
+            {
+                name: '5) Acompanhando costas da Terra, fitando Sol',
+                get position() {
+                    // encontrando posição da Terra usando trigonometria
+                    const sun = state.celestialBodies.sun
+                    const earth = state.celestialBodies.earth
+                    const distanceFromEarthCenter = 40
+                    const earthCenter = v3.add(sun.center, [
+                        Math.cos(-earth.translationAngle) * (earth.distanceToSun + earth.radius + distanceFromEarthCenter),
+                        earth.radius * 3,
+                        Math.sin(-earth.translationAngle) * (earth.distanceToSun + earth.radius + distanceFromEarthCenter)
+                    ])
+                    return earthCenter
+
+                },
+                get target() {
+                    return [0, 0, 0]
+                },
+                up: [0, 1, 0],
+                type: 'follow'
+            }
         ],
     },
     t: 0,
@@ -427,6 +442,14 @@ export function render(gl) {
     // fim do exercício
 }
 
+function updateFollowCamera(camera) {
+    state.cameras.viewMatrix = m4.inverse(m4.lookAt(
+        state.cameras.views[state.cameras.current].position,
+        state.cameras.views[state.cameras.current].target,
+        state.cameras.views[state.cameras.current].up
+    ))
+}
+
 export function update(dt) {
     // atualiza a câmera para fazer uma transição de uma para outra
     if (state.cameras.transition?.t < 1 && state.cameras.transition?.to !== null) {
@@ -439,8 +462,17 @@ export function update(dt) {
 
         if (state.cameras.transition.t >= 1) {
             state.cameras.transition = null
+
+        }
+    } else {
+        // se terminou a transição e a câmera atual for do tipo "follow", 
+        // vamos atualizar a matriz de visualização
+        if (state.cameras.views[state.cameras.current].type === 'follow') {
+            // atualizar constantemente a matriz de visualização da câmera
+            updateFollowCamera(state.cameras.views[state.cameras.current])
         }
     }
+    
 
     // atualiza os dados (hora e dia) dos corpos celestes
     for (let body of Object.values(state.celestialBodies)) {
