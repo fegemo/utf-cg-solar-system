@@ -409,9 +409,15 @@ export function render(gl) {
             model.pop()
 
             // EXERCÍCIO 4: marte
+            model.push(m4.rotateY(model.at(-1), mars.translationAngle))
+                model[model.length - 1] = m4.translate(model.at(-1), [mars.distanceToSun, 0, 0])
+                model[model.length - 1] = m4.rotateY(model.at(-1), mars.rotationAngle)
+                model[model.length - 1] = m4.scale(model.at(-1), [mars.radius, mars.radius, mars.radius])
+                gl.uniformMatrix4fv(state.program.locations.u_model, false, model.at(-1))
+                gl.uniform3fv(state.program.locations.u_color, mars.color)
+                state.geometry.sphere.draw(gl, state.wireframe)
+            model.pop()
 
-
-            // DESAFIO 1: fazer a lua na órbita da Terra
 
             // DESAFIO 2: câmera seguindo algum corpo celeste (ex.: terra), visualizando
             // o lado oculto do planeta (ou seja, olhando para o planeta "de costas", 
