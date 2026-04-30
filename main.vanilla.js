@@ -245,7 +245,7 @@ export async function initialize(gl, shaderName) {
 
     // inicializa o estado da aplicação
     gl.useProgram(state.program.id)
-    gl.clearColor(1, 1, 1, 1)
+    gl.clearColor(0, 0, 0, 1)
     gl.uniform1f(state.program.locations.u_alpha, 1.0)
     gl.uniform1i(state.program.locations.u_showDepth, 0)
     gl.enable(gl.CULL_FACE)
