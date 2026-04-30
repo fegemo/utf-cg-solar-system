@@ -386,7 +386,27 @@ export function render(gl) {
             model.pop()
             
             // EXERCÍCIO 3: terra
+            model.push(m4.rotateY(model.at(-1), earth.translationAngle))
+                model[model.length - 1] = m4.translate(model.at(-1), [earth.distanceToSun, 0, 0])
+                model.push(m4.rotateY(model.at(-1), earth.rotationAngle))
+                    model[model.length - 1] = m4.scale(model.at(-1), [earth.radius, earth.radius, earth.radius])
+                    gl.uniformMatrix4fv(state.program.locations.u_model, false, model.at(-1))
+                    gl.uniform3fv(state.program.locations.u_color, earth.color)
+                    state.geometry.sphere.draw(gl, state.wireframe)
 
+                model.pop()
+
+                // DESAFIO 1: fazer a lua na órbita da Terra
+                model.push(m4.rotateY(model.at(-1), moon.translationAngle))
+                    model[model.length - 1] = m4.translate(model.at(-1), [moon.distanceToEarth, 0, 0])
+                    model[model.length - 1] = m4.rotateY(model.at(-1), moon.rotationAngle)
+                    model[model.length - 1] = m4.scale(model.at(-1), [moon.radius, moon.radius, moon.radius])
+                    gl.uniformMatrix4fv(state.program.locations.u_model, false, model.at(-1))
+                    gl.uniform3fv(state.program.locations.u_color, moon.color)
+                    state.geometry.sphere.draw(gl, state.wireframe)
+                model.pop()
+
+            model.pop()
 
             // EXERCÍCIO 4: marte
 
