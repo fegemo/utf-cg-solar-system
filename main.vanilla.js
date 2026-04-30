@@ -376,7 +376,14 @@ export function render(gl) {
             model.pop()
             
             // EXERCÍCIO 2: vênus
-
+            model.push(m4.rotateY(model.at(-1), venus.translationAngle))
+                model[model.length - 1] = m4.translate(model.at(-1), [venus.distanceToSun, 0, 0])
+                model[model.length - 1] = m4.rotateY(model.at(-1), venus.rotationAngle)
+                model[model.length - 1] = m4.scale(model.at(-1), [venus.radius, venus.radius, venus.radius])
+                gl.uniformMatrix4fv(state.program.locations.u_model, false, model.at(-1))
+                gl.uniform3fv(state.program.locations.u_color, venus.color)
+                state.geometry.sphere.draw(gl, state.wireframe)
+            model.pop()
             
             // EXERCÍCIO 3: terra
 
