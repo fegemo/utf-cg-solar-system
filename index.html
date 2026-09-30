@@ -24,7 +24,7 @@
           cada uma visualizando a cena de um ponto de vista diferente. 
         </p>
         <div class="input-controls">
-          <label for="input-camera"><ins>C</ins>âmera:</label>
+          <label for="input-camera"><kbd data-bind-class="pressed:state.keys.KeyC">C</kbd>âmera:</label>
           <span>
             <select id="input-camera" data-bind-select="state.cameras.current" data-bind-options="state.cameras.views" data-bind-option-value="$" data-bind-option-content="name">
             </select>
@@ -36,6 +36,15 @@
           <dt><kbd data-bind-class="pressed:state.showDepthBuffer">D</kbd></dt>
           <dd>Mostra/oculta o buffer de profundidade</dd>
         </dl>
+        <div class="input-controls">
+          <label for="input-interpolation"><kbd data-bind-class="pressed:state.keys.KeyI">I</kbd>nterpolação de câmeras:</label>
+          <span>
+            <select id="input-interpolation" data-bind-select="state.interpolation.selected" data-bind-options="state.interpolation.options" data-bind-option-value="$" data-bind-option-content="name">
+            </select>
+          </span>
+          <button popovertarget="interpolation-popover">ℹ️</button>
+          <div id="interpolation-popover" popover="hint" class="interpolation-description" data-bind-text="state.interpolation.options[state.interpolation.selected].description"></div>
+        </div>
       </div>
     </details>
   </main>

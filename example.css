@@ -165,3 +165,11 @@ summary {
 }
 
 
+[popover] {
+    position-area: top;
+    margin: initial;
+    max-width: 300px;
+    border: 1px solid cornflowerblue;
+    border-radius: 4px;
+    box-shadow: 4px 4px 2px #0001;
+}

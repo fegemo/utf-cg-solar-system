@@ -1,7 +1,7 @@
 import { createProgramFromFiles, setupWebGL } from './vanilla-utils/shader.js'
 import { grid, axes, sphere } from './vanilla-utils/geometry.js'
 import { m4, v3 } from './twgl.full.module.js'
-import { interpolateMatrices } from './vanilla-utils/math.js'
+import { interpolateMatrices, interpolateCameras } from './vanilla-utils/math.js'
 // m4 é o utilitário de matrizes da TWGL.js: 
 // v3 é o utilitário de ponto ou vetor de 3D: 
 
@@ -9,22 +9,24 @@ import { interpolateMatrices } from './vanilla-utils/math.js'
 export { setupWebGL }
 
 const state = {
+    // sobre o shader: ids e localizações de uniforms e atributos
     program: {
         id: null,
         locations: {
-            u_model: null,
-            u_view: null,
-            u_projection: null,
-            u_showDepth: null,
-            u_alpha: null,
-            u_color: null,
-            u_illuminated: null,
-            u_usePerVertexColor: null,
-            a_coords: null,
-            a_color: null,
-            a_normal: null
+            u_model: null,                  // matriz de modelo
+            u_view: null,                   // matriz de visualização
+            u_projection: null,             // matriz de projeção
+            u_showDepth: null,              // bool para mostrar z-buffer
+            u_alpha: null,                  // float para alpha (opacidade)
+            u_color: null,                  // vec3 para cor do objeto (quando não se usa cor por vértice)
+            u_illuminated: null,            // bool para indicar se o objeto é iluminado (sol) ou não (planetas)
+            u_usePerVertexColor: null,      // bool para indicar se o objeto usa cor por vértice (grid e axes) ou não (planetas)
+            a_coords: null,                 // atributo de coordenadas dos vértices
+            a_color: null,                  // atributo de cor dos vértices (quando se usa cor por vértice)
+            a_normal: null                  // atributo de normal dos vértices (para iluminação)
         }
     },
+    // geometrias que compõem a cena: (a) VAO e (b) função de desenho
     geometry: {
         grid: {
             vao: null,
@@ -39,6 +41,8 @@ const state = {
             draw: null
         }
     },
+    // câmeras: atual, matriz view, possível transição, 
+    // e lista de câmeras possíveis
     cameras: {
         current: 0,
         viewMatrix: null,
@@ -82,10 +86,23 @@ const state = {
             // }
         ],
     },
-    t: 0,
-    autoIncrementT: false,
-    wireframe: false,
-    showDepthBuffer: false,
+    // configuração da cena
+    wireframe: false,                       // mostrar arestas dos modelos
+    showDepthBuffer: false,                 // mostrar o buffer de profundidade (z-buffer)
+    interpolation: {                        // como interpolar transformações de câmera
+        options: [{
+            // este é o jeito certo
+            name: 'cameras',
+            description: 'Interpola a posição, alvo e vetor up das câmeras, e calcula a matriz de visualização a partir disso'
+         }, {
+            // este é o jeito errado que ilustra o 
+            // problema de interpolar matrizes diretamente
+            name: 'matrices',
+            description: 'Interpola diretamente as matrizes de visualização das câmeras'
+        }],
+        selected: 0
+    },
+    // corpos celestes: sol, mercúrio, vênus, terra e marte
     celestialBodies: {
         sun: {
             center: [0, 0, 0],
@@ -187,6 +204,7 @@ const state = {
             }
         }
     },
+    // objetos de apoio: grid e eixos para situar a cena
     helperObjects: [
         {
             // grid representando o plano orbital
@@ -203,10 +221,13 @@ const state = {
             }
         },
     ],
+    // estado das teclas de controle da cena
     keys: {
         ArrowUp: false,
         ArrowDown: false,
-        Space: false
+        Space: false,
+        KeyC: false,
+        KeyI: false
     }
 }
 
@@ -216,6 +237,8 @@ function activateCamera(newCamera) {
     state.cameras.transition = {
         from: state.cameras.viewMatrix,
         to: viewMatrix,
+        fromCamera: state.cameras.views[state.cameras.current],
+        toCamera: newCamera,
         t: 0
     }
     console.log("Câmera atual:", newCamera.name)
@@ -238,7 +261,7 @@ export async function initialize(gl, shaderName) {
     state.program.locations.a_color = gl.getAttribLocation(state.program.id, 'a_color')
     state.program.locations.a_normal = gl.getAttribLocation(state.program.id, 'a_normal')
 
-    // cria a geometria de um cubo unitário na origem
+    // cria a geometria de apoio (grid e eixos para situar a cena e esfera para os corpos celestes)
     state.geometry.grid = grid(gl, state.program)
     state.geometry.axes = axes(gl, state.program, 0, 0, 0, 2000, true, false)
     state.geometry.sphere = sphere(gl, state.program)
@@ -268,8 +291,10 @@ export async function initialize(gl, shaderName) {
     activateCamera(initialCamera);
 
     // inicializa os manipuladores de eventos para teclado para:
-    // - setas para cima/baixo: incrementam/decrementam t
-    // - barra de espaço: ativa/desativa incremento automático de t
+    // - tecla 'C': alternar as câmeras
+    // - tecla 'W': alternar entre mostrar o modelo de arames ou não
+    // - tecla 'D': alternar entre mostrar o buffer de profundidade e a cena renderizada
+    // - tecla 'I': alternar entre interpolação de matrizes e interpolação de câmeras
     ['keydown', 'keyup'].forEach((nameOfEvent) => {
         window.addEventListener(nameOfEvent, (e) => {
             if (e.code in state.keys) {
@@ -280,29 +305,27 @@ export async function initialize(gl, shaderName) {
                 e.preventDefault(); 
             }
             
-            if (e.code === 'Space' && nameOfEvent === 'keydown') {
-                // alterna o estado de autoIncrementT ao pressionar espaço
-                state.autoIncrementT = !state.autoIncrementT;
-                // previne comportamento padrão da tecla (ex.: rolar a página)
-                e.preventDefault();
-            }
-
             if (e.code === 'KeyC' && nameOfEvent === 'keydown') {
-                // alterna entre as câmeras ao pressionar a tecla C
-                state.cameras.current = (state.cameras.current + 1) % state.cameras.views.length
-                activateCamera(state.cameras.views[state.cameras.current])
+                // alterna entre as câmeras
+                const newCameraIndex = (state.cameras.current + 1) % state.cameras.views.length
+                activateCamera(state.cameras.views[newCameraIndex])
+                state.cameras.current = newCameraIndex
             }
 
             if (e.code === 'KeyW' && nameOfEvent === 'keydown') {
-                // alterna entre projeção ortográfica e perspectiva ao pressionar 'P'
+                // alterna entre mostrar o modelo de arames ou não
                 state.wireframe = !state.wireframe
             }
 
             if (e.code === 'KeyD' && nameOfEvent === 'keydown') {
-                // alterna entre mostrar o buffer de profundidade e a cena renderizada ao pressionar 'D'
+                // alterna entre mostrar o buffer de profundidade e a cena renderizada
                 state.showDepthBuffer = !state.showDepthBuffer
                 gl.uniform1i(state.program.locations.u_showDepth, state.showDepthBuffer ? 1 : 0)
-                console.log("Mostrar buffer de profundidade:", state.showDepthBuffer)
+            }
+
+            if (e.code === 'KeyI' && nameOfEvent === 'keydown') {
+                // alterna entre interpolação de matrizes e interpolação de câmeras
+                state.interpolation.selected = (state.interpolation.selected === 0) ? 1 : 0
             }
         })
     })
@@ -310,16 +333,14 @@ export async function initialize(gl, shaderName) {
     const cameraSelect = document.getElementById('input-camera')
     cameraSelect.addEventListener('change', (e) => {
         const selectedIndex = e.target.selectedIndex
-        state.cameras.current = selectedIndex
         activateCamera(state.cameras.views[selectedIndex])
     })
 }
 
 export function render(gl) {
-    // renderiza: desenha o VAO que estava ativado
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-    // atualiza a câmera
+    // atualiza a matriz de view da câmera no shader
     gl.uniformMatrix4fv(state.program.locations.u_view, false, state.cameras.viewMatrix)
 
     // instrui shader a usar 1 cor por vértice
@@ -388,14 +409,27 @@ export function render(gl) {
 }
 
 export function update(dt) {
-    // atualiza a câmera para fazer uma transição de uma para outra
+    // se estiver acontecendo uma mudança de câmera,
+    // atualiza a matriz view para fazer uma transição de uma para outra
     if (state.cameras.transition?.t < 1 && state.cameras.transition?.to !== null) {
         state.cameras.transition.t = Math.min(1, state.cameras.transition.t + dt*2)
-        state.cameras.viewMatrix = interpolateMatrices(
-            state.cameras.transition.from,
-            state.cameras.transition.to,
-            state.cameras.transition.t
-        )
+
+        switch (state.interpolation.options[state.interpolation.selected].name) {
+            case 'matrices':
+                state.cameras.viewMatrix = interpolateMatrices(
+                    state.cameras.transition.from,
+                    state.cameras.transition.to,
+                    state.cameras.transition.t
+                )
+            break
+            case 'cameras':
+                state.cameras.viewMatrix = interpolateCameras(
+                    state.cameras.transition.fromCamera,
+                    state.cameras.transition.toCamera,
+                    state.cameras.transition.t
+                )
+            break
+        }
 
         if (state.cameras.transition.t >= 1) {
             state.cameras.transition = null

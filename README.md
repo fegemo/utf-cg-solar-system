@@ -64,7 +64,11 @@ Você deve abrir o projeto e fazer a atividade no arquivo `main.vanilla.js`.
 Até visualize os outros arquivos, mas o principal está nesse `main`.
 
 Recomendo usar a abordagem 1 (pilha de matrizes model) porque o código está
-prontinho para isso, e é mais simples do que implementar um grafo de cena.
+prontinho para isso, e é mais simples de implementar do que um grafo de cena.
+
+ℹ️ Observação: estamos usando o utilitário matemático da
+TWGL.js. Em particular, para matrizes 4x4 ([m4][m4-docs]) e
+para ponto/vetor de 3 dimensões ([v3][v3-docs]).
 
 Vamos lá:
 
@@ -76,8 +80,11 @@ Vamos lá:
     - Implemente as transformações para desenhar Mercúrio
     - Todos os planetas são esferas, desenhadas com:
         ```javascript
-        state.geometry.sphere.draw(gl, wireframe)
+        state.geometry.sphere.draw(gl, state.wireframe)
         ```
+        - Parâmetros: `gl` é o contexto do WebGL e `state.wireframe`
+          é apenas um `boolean` para indicar se as arestas devem ser
+          desenhadas também (não se preocupe com esses parâmetros)
     - Repare como desenhamos o Sol:
         ```javascript
         // cria a pilha de matrizes model
@@ -111,9 +118,9 @@ Vamos lá:
                 // ...
         ```
     - Logo antes de desenhar, defina:
-        1. Uniform `u_model` com a matriz que está no topo da pilha
-        1. Uniform `u_color` com a cor do planeta
-        1. Uniform `u_illuminated` com **1** indicando que o planeta está sob 
+        1. Uniforme `u_model` com a matriz que está no topo da pilha
+        1. Uniforme `u_color` com a cor do planeta
+        1. Uniforme `u_illuminated` com **1** indicando que o planeta está sob 
            efeito da luz do Sol
 - Exercício 2: Vênus
     - Faça o mesmo para Vênus
@@ -127,8 +134,13 @@ Vamos lá:
 - Desafio 2: Nova câmera, acompanhando um planeta
     - Faça uma nova câmera que acompanhe um corpo celeste em sua órbita
     - Vais precisar fazer continhas com pontos e vetores
-        - Use o `v3` de `import { v3 } from './twgl.full.module.js`
+        - Use o [`v3`][v3-docs] de `import { v3 } from './twgl.full.module.js`
     - Ideia: encontre a posição **resultante** do planeta no mundo, depois um
       vetor para se distanciar do centro do planeta alguma quantidade nessa
       direção
 
+
+
+
+[m4-docs]: https://twgljs.org/docs/module-twgl_m4.html
+[v3-docs]: https://twgljs.org/docs/module-twgl_v3.html
